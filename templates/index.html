@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoiceLens</title>
+    <style>
+        :root {
+            --primary-color: #405DE6;
+            --secondary-color: #5851DB;
+            --accent-color: #833AB4;
+            --text-color: #262626;
+            --light-gray: #fafafa;
+            --border-color: #dbdbdb;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--light-gray);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+        }
+        
+        .header {
+            position: sticky;
+            top: 0;
+            background: white;
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px 0;
+            z-index: 100;
+        }
+        
+        .header-content {
+            max-width: 600px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: 600;
+            background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .feed {
+            max-width: 600px;
+            margin: 0 auto;
+            padding-bottom: 60px;
+        }
+        
+        .post {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        
+        .post-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+        
+        .profile-pic {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 12px;
+            object-fit: cover;
+            border: 2px solid #f09433;
+            background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+            padding: 2px;
+        }
+        
+        .username {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .more-options {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            transform: rotate(90deg);
+            padding: 8px;
+            color: var(--text-color);
+        }
+        
+        .post-image-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1;
+            background: #f0f0f0;
+        }
+        
+        .post-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+        
+        .post-image:active {
+            opacity: 0.7;
+        }
+        
+        .caption-overlay {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+            backdrop-filter: blur(5px);
+            z-index: 10;
+        }
+        
+        .audio-player {
+            width: calc(100% - 40px);
+            margin: 10px 20px;
+            display: none;
+        }
+        
+        .post-footer {
+            padding: 0 16px 12px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            padding: 8px 0;
+        }
+        
+        .action-button {
+            background: none;
+            border: none;
+            font-size: 24px;
+            margin-right: 16px;
+            cursor: pointer;
+            padding: 8px;
+        }
+        
+        .likes {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        
+        .caption {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        
+        .timestamp {
+            color: #8e8e8e;
+            font-size: 10px;
+            text-transform: uppercase;
+            margin-top: 6px;
+        }
+        
+        .loading-spinner {
+            display: none;
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 20;
+        }
+        
+        @keyframes spin {
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        
+        .navbar {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: white;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+        }
+        
+        .nav-icon {
+            font-size: 24px;
+            color: var(--text-color);
+        }
+        
+        .triple-click-hint {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 5;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">VoiceLens</div>
+            <div>
+                <button class="action-button">+</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="feed">
+        <div class="post">
+            <div class="post-header">
+                <div class="user-info">
+                    <img class="profile-pic" src="{{ url_for('static', filename='picnic.jpg') }}" alt="Profile">
+                    <div class="username">Daniel_cliff</div>
+                </div>
+                <button class="more-options">⋯</button>
+            </div>
+            <div class="post-image-container">
+                <img class="post-image" src="{{ url_for('static', filename='cats.jpg') }}" alt="picnic">
+                <div class="loading-spinner"></div>
+                <div class="caption-overlay"></div>
+                <div class="triple-click-hint"> click for caption</div>
+            </div>
+            <div class="post-footer">
+                <div class="action-buttons">
+                    <button class="action-button">♥</button>
+                    <button class="action-button">💬</button>
+                    <button class="action-button">↪</button>
+                </div>
+                <div class="likes">1,234 likes</div>
+                <div class="caption"><span class="username">nature_lover</span> Enjoying a beautiful day outdoors!</div>
+                <div class="timestamp">2 HOURS AGO</div>
+                <audio class="audio-player" controls></audio>
+            </div>
+        </div>
+        
+        <div class="post">
+            <div class="post-header">
+                <div class="user-info">
+                    <img class="profile-pic" src="{{ url_for('static', filename='party.jpg') }}" alt="Profile">
+                    <div class="username">XYZ_crazy</div>
+                </div>
+                <button class="more-options">⋯</button>
+            </div>
+            <div class="post-image-container">
+                <img class="post-image" src="{{ url_for('static', filename='party.jpg') }}" alt="party">
+                <div class="loading-spinner"></div>
+                <div class="caption-overlay"></div>
+                <div class="triple-click-hint"> click for caption</div>
+            </div>
+            <div class="post-footer">
+                <div class="action-buttons">
+                    <button class="action-button">♥</button>
+                    <button class="action-button">💬</button>
+                    <button class="action-button">↪</button>
+                </div>
+                <div class="likes">3,456 likes</div>
+                <div class="caption"><span class="username">XYZ_crazy</span> Best night ever with the crew!</div>
+                <div class="timestamp">5 HOURS AGO</div>
+                <audio class="audio-player" controls></audio>
+            </div>
+            
+        </div>
+        <div class="post">
+            <div class="post-header">
+                <div class="user-info">
+                    <img class="profile-pic" src="{{ url_for('static', filename='party.jpg') }}" alt="Profile">
+                    <div class="username">XYZ_crazy</div>
+                </div>
+                <button class="more-options">⋯</button>
+            </div>
+            <div class="post-image-container">
+                <img class="post-image" src="{{ url_for('static', filename='mountains.jpg') }}" alt="mountain">
+                <div class="loading-spinner"></div>
+                <div class="caption-overlay"></div>
+                <div class="triple-click-hint"> click for caption</div>
+            </div>
+            <div class="post-footer">
+                <div class="action-buttons">
+                    <button class="action-button">♥</button>
+                    <button class="action-button">💬</button>
+                    <button class="action-button">↪</button>
+                </div>
+                <div class="likes">3,456 likes</div>
+                <div class="caption"><span class="username">XYZ_crazy</span> snowy mountains...!</div>
+                <div class="timestamp">5 HOURS AGO</div>
+                <audio class="audio-player" controls></audio>
+            </div>
+            
+        </div>
+        <div class="post">
+            <div class="post-header">
+                <div class="user-info">
+                    <img class="profile-pic" src="{{ url_for('static', filename='party.jpg') }}" alt="Profile">
+                    <div class="username">XYZ_crazy</div>
+                </div>
+                <button class="more-options">⋯</button>
+            </div>
+            <div class="post-image-container">
+                <img class="post-image" src="{{ url_for('static', filename='interior.jpg') }}" alt="interior">
+                <div class="loading-spinner"></div>
+                <div class="caption-overlay"></div>
+                <div class="triple-click-hint"> click for caption</div>
+            </div>
+            <div class="post-footer">
+                <div class="action-buttons">
+                    <button class="action-button">♥</button>
+                    <button class="action-button">💬</button>
+                    <button class="action-button">↪</button>
+                </div>
+                <div class="likes">3,456 likes</div>
+                <div class="caption"><span class="username">XYZ_crazy</span> aesthetics...!</div>
+                <div class="timestamp">5 HOURS AGO</div>
+                <audio class="audio-player" controls></audio>
+            </div>
+            
+        </div>
+        
+        <div class="post">
+            <div class="post-header">
+                <div class="user-info">
+                    <img class="profile-pic" src="{{ url_for('static', filename='football.jpg') }}" alt="Profile">
+                    <div class="username">Wander_lust</div>
+                </div>
+                <button class="more-options">⋯</button>
+            </div>
+            <div class="post-image-container">
+                <img class="post-image" src="{{ url_for('static', filename='birds.jpg') }}" alt="birds">
+                <div class="loading-spinner"></div>
+                <div class="caption-overlay"></div>
+                <div class="triple-click-hint"> click for caption</div>
+            </div>
+            <div class="post-footer">
+                <div class="action-buttons">
+                    <button class="action-button">♥</button>
+                    <button class="action-button">💬</button>
+                    <button class="action-button">↪</button>
+                </div>
+                <div class="likes">8,765 likes</div>
+                <div class="caption"><span class="username">travel_addict</span> Paradise found 🌴</div>
+                <div class="timestamp">1 DAY AGO</div>
+                <audio class="audio-player" controls></audio>
+            </div>
+            <div class="post">
+            <div class="post-header">
+                <div class="user-info">
+                    <img class="profile-pic" src="{{ url_for('static', filename='birds.jpg') }}" alt="Profile">
+                    <div class="username">Wander_lust</div>
+                </div>
+                <button class="more-options">⋯</button>
+            </div>
+            <div class="post-image-container">
+                <img class="post-image" src="{{ url_for('static', filename='football.jpg') }}" alt="fo">
+                <div class="loading-spinner"></div>
+                <div class="caption-overlay"></div>
+                <div class="triple-click-hint"> click for caption</div>
+            </div>
+            <div class="post-footer">
+                <div class="action-buttons">
+                    <button class="action-button">♥</button>
+                    <button class="action-button">💬</button>
+                    <button class="action-button">↪</button>
+                </div>
+                <div class="likes">8,765 likes</div>
+                <div class="caption"><span class="username">travel_addict</span> Paradise found 🌴</div>
+                <div class="timestamp">1 DAY AGO</div>
+                <audio class="audio-player" controls></audio>
+            </div>
+        </div>
+        <div class="post">
+            <div class="post-header">
+                <div class="user-info">
+                    <img class="profile-pic" src="{{ url_for('static', filename='birds.jpg') }}" alt="Profile">
+                    <div class="username">John_philips</div>
+                </div>
+                <button class="more-options">⋯</button>
+            </div>
+            <div class="post-image-container">
+                <img class="post-image" src="{{ url_for('static', filename='horse race.jpg') }}" alt="birds">
+                <div class="loading-spinner"></div>
+                <div class="caption-overlay"></div>
+                <div class="triple-click-hint"> click for caption</div>
+            </div>
+            <div class="post-footer">
+                <div class="action-buttons">
+                    <button class="action-button">♥</button>
+                    <button class="action-button">💬</button>
+                    <button class="action-button">↪</button>
+                </div>
+                <div class="likes">8,765 likes</div>
+                <div class="caption"><span class="username">abhimanyu</span>horse riding..</div>
+                <div class="timestamp">1 DAY AGO</div>
+                <audio class="audio-player" controls></audio>
+            </div>
+        </div>
+    </div>
+    
+    <div class="navbar">
+        <div class="nav-icon">🏠</div>
+        <div class="nav-icon">🔍</div>
+        <div class="nav-icon">➕</div>
+        <div class="nav-icon">❤</div>
+        <div class="nav-icon">👤</div>
+    </div>
+
+    <script>
+        document.querySelectorAll('.post-image').forEach(img => {
+            let isEnglish = true; // Flag to track English or Hindi state
+            const postContainer = img.closest('.post-image-container');
+            const spinner = postContainer.querySelector('.loading-spinner');
+            const captionBox = postContainer.querySelector('.caption-overlay');
+            const audioPlayer = img.closest('.post').querySelector('.audio-player');
+            let timer;
+        
+            img.addEventListener('click', function() {
+                const imageUrl = this.src;
+        
+                if (isEnglish) {
+                    // Show loading state for English caption
+                    spinner.style.display = 'block';
+                    captionBox.style.display = 'none';
+                    audioPlayer.style.display = 'none';
+                    audioPlayer.pause();
+                    audioPlayer.src = '';
+        
+                    // Fetch English caption and audio
+                    fetch('/generate_caption', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ image_url: imageUrl })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        spinner.style.display = 'none';
+                        if (data.caption && data.audio_url) {
+                            captionBox.textContent = data.caption;
+                            captionBox.style.display = 'block';
+                            audioPlayer.src = data.audio_url;
+                            audioPlayer.style.display = 'block';
+                            audioPlayer.play();
+                        } else {
+                            captionBox.textContent = 'Error: ' + (data.error || 'Unknown error');
+                            captionBox.style.display = 'block';
+                        }
+                    })
+                    .catch(err => {
+                        spinner.style.display = 'none';
+                        captionBox.textContent = 'Error: ' + err;
+                        captionBox.style.display = 'block';
+                    });
+        
+                    isEnglish = false; // Toggle to Hindi on next long press
+                } else {
+                    // Show loading state for Hindi translation
+                    spinner.style.display = 'block';
+                    captionBox.style.display = 'none';
+                    audioPlayer.style.display = 'none';
+                    audioPlayer.pause();
+                    audioPlayer.src = '';
+        
+                    // Fetch Hindi translation and audio
+                    fetch('/generate_caption', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ image_url: imageUrl, lang: 'hi' }) // Hindi translation
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        spinner.style.display = 'none';
+                        if (data.translated_caption && data.audio_url) {
+                            captionBox.textContent = data.translated_caption;
+                            captionBox.style.display = 'block';
+                            audioPlayer.src = data.audio_url;
+                            audioPlayer.style.display = 'block';
+                            audioPlayer.play();
+                        } else {
+                            captionBox.textContent = 'Error: ' + (data.error || 'Unknown error');
+                            captionBox.style.display = 'block';
+                        }
+                    })
+                    .catch(err => {
+                        spinner.style.display = 'none';
+                        captionBox.textContent = 'Error: ' + err;
+                        captionBox.style.display = 'block';
+                    });
+        
+                    isEnglish = true; // Reset to English after Hindi
+                }
+            });
+        
+            // Implement the hold-to-trigger action
+            img.addEventListener('mousedown', function() {
+                timer = setTimeout(() => {
+                    // If held long enough, switch to Hindi
+                    isEnglish = false;
+                }, 1000); // 1 second hold triggers Hindi
+            });
+        
+            img.addEventListener('mouseup', function() {
+                clearTimeout(timer);
+            });
+        
+            img.addEventListener('mouseleave', function() {
+                clearTimeout(timer);
+            });
+        });
+        
+        
+        
+    </script>
+</body>
+</html>
